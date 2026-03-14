@@ -1,0 +1,7 @@
+/* App-level styles — layout handled by Tailwind */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
