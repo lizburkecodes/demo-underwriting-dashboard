@@ -86,7 +86,7 @@ export default function App() {
       </header>
 
       {/* ── Main three-panel grid ────────────────────────────────────────── */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-[340px_1fr_1fr] gap-0 overflow-hidden">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-0 overflow-hidden">
 
         {/* ── Left: Intake Form ──────────────────────────────────────────── */}
         <aside className="bg-white border-r border-slate-200 flex flex-col overflow-hidden">
