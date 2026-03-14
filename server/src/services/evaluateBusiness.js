@@ -14,7 +14,7 @@ const { RULES_BY_CATEGORY } = require("./scoringRules");
 const { to850, getRiskLevel, getScoreDecision } = require("../utils/scoreBands");
 
 // Neutral starting score for each category before rule deltas are applied.
-const CATEGORY_BASE = 60;
+const CATEGORY_BASE = 62;
 
 /**
  * Evaluate a normalized business payload and return the full score response.

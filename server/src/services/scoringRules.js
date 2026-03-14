@@ -36,7 +36,7 @@ function rule_PR_BANKRUPTCY(biz) {
     "PR_BANKRUPTCY",
     "Bankruptcy History",
     "No bankruptcy on record",
-    10,
+    20,
     "POSITIVE",
     "No bankruptcy history detected. Clean record is a strong positive signal for the business's credit profile."
   );
@@ -58,7 +58,7 @@ function rule_PR_LIENS(biz) {
     "PR_LIENS",
     "Liens & Judgments",
     "No liens or judgments",
-    8,
+    16,
     "POSITIVE",
     "No liens or judgments found. The business has a clean public record with no outstanding legal encumbrances."
   );
@@ -78,6 +78,16 @@ function rule_BO_BUSINESS_AGE(biz) {
     );
   }
   const age = CURRENT_YEAR - biz.year_created;
+  if (age >= 20) {
+    return factor(
+      "BO_BUSINESS_AGE",
+      "Business Age",
+      `${age} years in operation`,
+      20,
+      "POSITIVE",
+      `The business has been operating for ${age} years. Exceptional operating tenure — a premier indicator of stability and creditworthiness.`
+    );
+  }
   if (age > 5) {
     return factor(
       "BO_BUSINESS_AGE",
@@ -424,6 +434,16 @@ function rule_PM_REVIEW_SCORE(biz) {
       "Social review score was not provided. Online reputation assessment skipped."
     );
   }
+  if (score === 5.0) {
+    return factor(
+      "PM_REVIEW_SCORE",
+      "Social Review Score",
+      `${score} / 5.0`,
+      15,
+      "POSITIVE",
+      `Perfect review score of ${score}/5.0. Outstanding and consistent public reputation across all channels.`
+    );
+  }
   if (score > 4.5) {
     return factor(
       "PM_REVIEW_SCORE",
@@ -496,6 +516,81 @@ function rule_PM_EQUITY(biz) {
   );
 }
 
+function rule_FT_NET_MARGIN(biz) {
+  const income = biz.annual_total_income;
+  const net = biz.annual_net_income;
+  if (!income || !net || income <= 0) return null;
+
+  const margin = net / income;
+  if (margin >= 0.40) {
+    return factor(
+      "FT_NET_MARGIN",
+      "Net Profit Margin",
+      `${(margin * 100).toFixed(1)}% net margin`,
+      10,
+      "POSITIVE",
+      `Net profit margin of ${(margin * 100).toFixed(1)}% is exceptional. High margins indicate strong pricing power and operational efficiency.`
+    );
+  }
+  if (margin >= 0.20) {
+    return factor(
+      "FT_NET_MARGIN",
+      "Net Profit Margin",
+      `${(margin * 100).toFixed(1)}% net margin`,
+      5,
+      "POSITIVE",
+      `Net profit margin of ${(margin * 100).toFixed(1)}% is healthy. Business is retaining a solid portion of revenue as profit.`
+    );
+  }
+  return null; // Below 20% — no adjustment
+}
+
+function rule_CP_PROFILE_COMPLETENESS(biz) {
+  const hasWebsite = biz.official_website && biz.official_website.trim() !== "";
+  const hasApplicant = biz.applicant_first_name && biz.applicant_last_name && biz.applicant_email;
+  const hasOwner = biz.owner1_first_name && biz.owner1_last_name && biz.owner1_ownership_percentage >= 25;
+  if (hasWebsite && hasApplicant && hasOwner) {
+    return factor(
+      "CP_PROFILE_COMPLETENESS",
+      "Full Profile Completeness",
+      "Website, applicant, and owner all verified",
+      16,
+      "POSITIVE",
+      "Business profile is fully complete: website, applicant identity, and ownership are all on record. Maximum confidence in business identity."
+    );
+  }
+  return null;
+}
+
+function rule_PM_EQUITY_RATIO(biz) {
+  const equity = biz.total_equity;
+  const assets = biz.total_assets;
+  if (equity == null || assets == null || assets <= 0) return null;
+
+  const ratio = equity / assets;
+  if (ratio >= 0.75) {
+    return factor(
+      "PM_EQUITY_RATIO",
+      "Equity-to-Asset Ratio",
+      `${(ratio * 100).toFixed(1)}% equity ratio`,
+      10,
+      "POSITIVE",
+      `Equity represents ${(ratio * 100).toFixed(1)}% of total assets. An exceptionally strong ownership position with minimal leverage.`
+    );
+  }
+  if (ratio >= 0.40) {
+    return factor(
+      "PM_EQUITY_RATIO",
+      "Equity-to-Asset Ratio",
+      `${(ratio * 100).toFixed(1)}% equity ratio`,
+      5,
+      "POSITIVE",
+      `Equity represents ${(ratio * 100).toFixed(1)}% of total assets. Healthy ownership position indicating moderate leverage.`
+    );
+  }
+  return null;
+}
+
 // ─── Rule registry ────────────────────────────────────────────────────────────
 
 const RULES_BY_CATEGORY = {
@@ -506,14 +601,16 @@ const RULES_BY_CATEGORY = {
     rule_CP_INDUSTRY_RISK,
     rule_CP_OWNERSHIP_COMPLETENESS,
     rule_CP_APPLICANT_COMPLETENESS,
+    rule_CP_PROFILE_COMPLETENESS,
   ],
   FINANCIAL_TRENDS: [
     rule_FT_TOTAL_INCOME,
     rule_FT_NET_INCOME,
     rule_FT_ASSET_LIABILITY_RATIO,
     rule_FT_UNUSUAL_INCOME,
+    rule_FT_NET_MARGIN,
   ],
-  PERFORMANCE_MEASURES: [rule_PM_REVIEW_SCORE, rule_PM_EQUITY],
+  PERFORMANCE_MEASURES: [rule_PM_REVIEW_SCORE, rule_PM_EQUITY, rule_PM_EQUITY_RATIO],
 };
 
 module.exports = { RULES_BY_CATEGORY };
