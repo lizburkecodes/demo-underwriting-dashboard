@@ -1,14 +1,15 @@
 /**
- * App Business Underwriting Dashboard
+ * App — Business Underwriting Dashboard
  *
  * Three-panel layout:
  *   Left   — Business intake / onboarding form
  *   Center — Score card / decision result
  *   Right  — Explainability panel
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { api } from "./lib/api";
 import { defaultFormValues } from "./data/formDefaults";
+import type { ScoreResult, ExampleBusiness, BusinessPayload } from "./types/score";
 
 import BusinessOnboardingForm from "./components/BusinessOnboardingForm";
 import ExampleBusinessButtons from "./components/ExampleBusinessButtons";
@@ -16,11 +17,11 @@ import ScoreCard from "./components/ScoreCard";
 import ExplainabilityPanel from "./components/ExplainabilityPanel";
 
 export default function App() {
-  const [formData, setFormData]   = useState(defaultFormValues);
-  const [examples, setExamples]   = useState([]);
-  const [result, setResult]       = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError]         = useState(null);
+  const [formData, setFormData]   = useState<BusinessPayload>(defaultFormValues);
+  const [examples, setExamples]   = useState<ExampleBusiness[]>([]);
+  const [result, setResult]       = useState<ScoreResult | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError]         = useState<string | null>(null);
 
   // Fetch seeded examples on mount
   useEffect(() => {
@@ -29,24 +30,23 @@ export default function App() {
       .catch(() => {/* silently ignore — server may not be up yet */});
   }, []);
 
-  const handleFieldChange = (name, value) => {
+  const handleFieldChange = (name: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleLoadExample = (payload) => {
-    // Map payload fields to form state (stringify numbers for controlled inputs)
-    const mapped = {};
-    for (const [k, v] of Object.entries(defaultFormValues)) {
-      mapped[k] = payload[k] !== undefined && payload[k] !== null
-        ? payload[k]
-        : v;
-    }
+  const handleLoadExample = (payload: BusinessPayload) => {
+    const mapped = Object.fromEntries(
+      (Object.keys(defaultFormValues) as Array<keyof BusinessPayload>).map((key) => [
+        key,
+        payload[key] ?? defaultFormValues[key],
+      ])
+    ) as unknown as BusinessPayload;
     setFormData(mapped);
     setResult(null);
     setError(null);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -55,8 +55,9 @@ export default function App() {
       const res = await api.evaluate(formData);
       setResult(res.data.result);
     } catch (err) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
       setError(
-        err?.response?.data?.error ||
+        axiosErr?.response?.data?.error ||
         "Failed to connect to the evaluation server. Is the backend running?"
       );
     } finally {
@@ -161,4 +162,3 @@ export default function App() {
     </div>
   );
 }
-

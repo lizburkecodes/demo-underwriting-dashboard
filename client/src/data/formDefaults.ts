@@ -1,7 +1,10 @@
 /**
  * Default form values for the Business Onboarding Form.
+ * Typed as BusinessPayload to stay in sync with the API interface.
  */
-export const defaultFormValues = {
+import type { BusinessPayload } from "../types/score";
+
+export const defaultFormValues: BusinessPayload = {
   external_id: "",
   name: "",
   tin: "",
